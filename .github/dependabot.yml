@@ -8,13 +8,6 @@ updates:
       npm:
         patterns: ["*"]
         update-types: ["minor", "patch"]
-    # `minimatch` 7.0.0–11.0.0 is flagged, and there is no patched release on the 10.x
-    # line — 10.2.6 is the newest 10.x that exists. Dependabot's only proposed path
-    # downgrades eslint 10.14.0 → 9.39.5, which it refuses to do, so the update job
-    # errors out rather than producing a PR. This suppresses the auto-update ATTEMPT,
-    # not the advisory; remove it when a patched 10.x ships.
-    ignore:
-      - dependency-name: minimatch
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly, day: monday }

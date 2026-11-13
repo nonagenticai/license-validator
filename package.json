@@ -42,6 +42,7 @@
     "url": "https://nonagentic.ai"
   },
   "overrides": {
-    "isolated-vm": "7.0.2"
+    "isolated-vm": "7.0.2",
+    "minimatch": "11.0.1"
   }
 }

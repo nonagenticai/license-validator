@@ -1,5 +1,5 @@
 /**
- * @nonagentic/license-validator
+ * @nonagenticai/license-validator
  *
  * License validation package for n8n custom modules
  */

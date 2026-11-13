@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Published package renamed to `@nonagenticai/license-validator` (the public npm scope).
+  A `repository` field was added — `npm publish --provenance` requires it — and `access: public`
+  moved into `publishConfig` so a publish cannot accidentally depend on the CLI flag.
+
 ### Security
 
 - Cleared both critical advisories (`handlebars` 3.0.0–4.7.9) and every fixable high one via a

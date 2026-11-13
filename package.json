@@ -1,5 +1,5 @@
 {
-  "name": "@nonagentic/license-validator",
+  "name": "@nonagenticai/license-validator",
   "version": "1.0.2",
   "description": "License validation for n8n custom modules",
   "main": "dist/index.js",
@@ -19,8 +19,13 @@
   ],
   "license": "Apache-2.0",
   "homepage": "https://nonagentic.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nonagenticai/license-validator.git"
+  },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

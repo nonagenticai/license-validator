@@ -1,5 +1,9 @@
 # @nonagentic/license-validator
 
+[![CI](https://github.com/nonagenticai/license-validator/actions/workflows/ci-public.yml/badge.svg)](https://github.com/nonagenticai/license-validator/actions/workflows/ci-public.yml)
+[![Release](https://img.shields.io/github/v/release/nonagenticai/license-validator)](https://github.com/nonagenticai/license-validator/releases)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 License validation package for n8n custom modules with intelligent caching.
 
 ## What License Validator Does
@@ -63,6 +67,18 @@ Clear all cached validation results.
 Clear cache for a specific token.
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+## Security
+
+Report vulnerabilities privately through the repository's Security tab — see
+[`SECURITY.md`](SECURITY.md). Do not open a public issue for a security problem.
+
+## Contributing
+
+Issues and pull requests are welcome. See
+[`CONTRIBUTING.md`](https://github.com/nonagenticai/.github/blob/main/CONTRIBUTING.md) for the
+organisation-wide rules; setup, test and lint commands are in this README. Commits carry DCO
+sign-off.
 
 ## License
 

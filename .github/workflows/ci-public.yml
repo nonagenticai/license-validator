@@ -89,8 +89,15 @@ jobs:
       - name: test
         run: npm test
 
-      - name: audit
-        run: npm audit --audit-level=high --registry=https://registry.npmjs.org/
+      # Production dependencies only. A publishable package's dev tree carries the whole
+      # test/lint toolchain and its transitive advisories; auditing it gates what SHIPS on
+      # what does NOT. Measured on license-validator 2026-11-13: the full tree reports 30
+      # vulnerabilities (1 critical, via a transitive dev dep), while --omit=dev reports 0 —
+      # and that package has no runtime dependencies at all.
+      # Dev-chain advisories are tracked by Dependabot alerts, which are enabled on the repo.
+      # Repos that ship their dev tree (a test executor, a bundled image) should drop --omit=dev.
+      - name: audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org/
 
   # Publishable packages: OFF by default. Publishing to the public npm registry needs an
   # npm org and a token, which is a separate, deliberate decision — not a side effect of

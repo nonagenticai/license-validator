@@ -13,6 +13,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Known limitation
 
+- `minimatch` 7.0.0–11.0.0 is flagged and **no patched 10.x exists** (10.2.6 is the newest).
+  Dependabot's only proposed path downgrades `eslint` 10.14.0 → 9.39.5, which it refuses to
+  perform, so its update job errored out on `main` instead of opening a PR. The dependency is
+  now listed under `ignore:` in `.github/dependabot.yml` — that silences the auto-update
+  *attempt*, not the advisory, which stays visible on the security tab. Remove the entry when a
+  patched 10.x ships.
 - Three high findings remain, all one root: `zod` 3.25.76 (GHSA-mrhx-c7xc-m3w5), reached as
   `n8n-workflow` → `@n8n/expression-runtime` → `zod`. `n8n-workflow` is a **devDependency** and
   the package declares no peer dependency on it, so nothing here ships that code. There is no

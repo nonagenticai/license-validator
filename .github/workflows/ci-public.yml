@@ -99,10 +99,16 @@ jobs:
       - name: audit (production dependencies)
         run: npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org/
 
-  # Publishable packages: OFF by default. Publishing to the public npm registry needs an
-  # npm org and a token, which is a separate, deliberate decision — not a side effect of
-  # making the source public. Enable with the repository variable `PUBLISH_NPM=true` and an
-  # `NPM_TOKEN` secret only once that decision is made.
+  # Publishable packages: OFF by default. Publishing to the public npm registry is a separate,
+  # deliberate decision — not a side effect of making the source public. Enable with the
+  # repository variable `PUBLISH_NPM=true`.
+  #
+  # ⛔ BOOTSTRAP EXCEPTION — TEMPORARY. The `open-source-kit` archetype is OIDC-only (npm refuses
+  #    to run when a token is also present). But a Trusted Publisher can only be configured for a
+  #    package that already exists, so the FIRST publish of a brand-new package cannot use OIDC.
+  #    `NODE_AUTH_TOKEN` below exists only for that first publish; the follow-up change removes it
+  #    and restores the archetype verbatim. Provenance does not depend on the credential: the job
+  #    has `id-token: write` and attests from the OIDC token either way.
   package:
     if: ${{ !github.event.repository.private && vars.PUBLISH_NPM == 'true' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
@@ -118,6 +124,24 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm ci --registry=https://registry.npmjs.org/
       - run: npm run build --if-present
-      - run: npm publish --provenance --access public
+      # Publish ONCE per version. `PUBLISH_NPM=true` runs this job on every push to main, but a
+      # registry version is immutable — the second publish of the same version is an error and
+      # would turn main red for a change that published nothing. Probe the exact name+version
+      # first and fail CLOSED: only a definitive 404 publishes; any other non-200 (5xx, timeout,
+      # proxy) refuses rather than guessing. Measured on registry.npmjs.org: a published version
+      # returns 200, an unpublished one 404, for scoped names too (encodeURIComponent form).
+      - name: publish once
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          ENC=$(node -p "encodeURIComponent(process.argv[1])" "$NAME")
+          echo "publishing $NAME@$VERSION"
+          code=$(curl -sS --retry 3 --max-time 15 -o /dev/null -w '%{http_code}' \
+            "https://registry.npmjs.org/$ENC/$VERSION") || true
+          case "$code" in
+            200) echo "already published — skipping" ;;
+            404) npm pack --dry-run && npm publish --provenance --access public ;;
+            *)   echo "registry probe returned $code — refusing to publish blind" >&2; exit 1 ;;
+          esac
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,4 +1,4 @@
-# @nonagentic/license-validator
+# @nonagenticai/license-validator
 
 [![CI](https://github.com/nonagenticai/license-validator/actions/workflows/ci-public.yml/badge.svg)](https://github.com/nonagenticai/license-validator/actions/workflows/ci-public.yml)
 [![Release](https://img.shields.io/github/v/release/nonagenticai/license-validator)](https://github.com/nonagenticai/license-validator/releases)
@@ -12,7 +12,7 @@ Every n8n custom node on the nonagentic.ai platform must verify that the user ho
 
 Because n8n workflows can execute hundreds of times per minute, hitting the licenses service on every execution would create unnecessary load and latency. The validator caches introspection results in memory with a configurable TTL (5 minutes by default), so a valid license is verified once and then reused across subsequent executions within the cache window. A singleton pattern ensures all nodes within the same n8n worker process share a single cache instance, and concurrent validation prevention ensures that parallel workflow executions for the same token do not trigger redundant introspection calls.
 
-The package is consumed as `@nonagentic/license-validator` by the n8n custom node packages and installed into the n8n image at build time alongside them. It has no external runtime dependencies beyond the native `fetch` API, making it lightweight enough to bundle into any Node.js-based consumer without adding dependency weight.
+The package is consumed by the n8n custom node packages and installed into the n8n image at build time alongside them. It has no external runtime dependencies beyond the native `fetch` API, making it lightweight enough to bundle into any Node.js-based consumer without adding dependency weight.
 
 ## Features
 
@@ -25,13 +25,13 @@ The package is consumed as `@nonagentic/license-validator` by the n8n custom nod
 ## Installation
 
 ```bash
-npm install @nonagentic/license-validator
+npm install @nonagenticai/license-validator
 ```
 
 ## Usage
 
 ```typescript
-import { getLicenseValidator } from '@nonagentic/license-validator';
+import { getLicenseValidator } from '@nonagenticai/license-validator';
 
 // Get singleton instance
 const validator = getLicenseValidator();
@@ -43,7 +43,7 @@ await validator.validate(licenseToken);
 ## Configuration
 
 ```typescript
-import { LicenseValidator } from '@nonagentic/license-validator';
+import { LicenseValidator } from '@nonagenticai/license-validator';
 
 const validator = new LicenseValidator({
   introspectUrl: 'http://custom-endpoint:8544/license/introspect',

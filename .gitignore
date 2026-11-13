@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+coverage/
+*.tgz
+.env
+package-lock.json
+.local-ci-commit.txt
+.local-ci-push.txt
+01_recent_push_failure.txt
+02_deploy_issues.txt

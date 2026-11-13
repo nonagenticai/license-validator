@@ -1,0 +1,42 @@
+{
+  "name": "@nonagentic/license-validator",
+  "version": "1.0.2",
+  "description": "License validation for n8n custom modules",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "NODE_OPTIONS='--localstorage-file=/tmp/jest-localstorage' jest --passWithNoTests"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "license",
+    "validation",
+    "n8n"
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://nonagentic.ai",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.0.0",
+    "eslint": "^10.5.0",
+    "jest": "^30.4.2",
+    "n8n-workflow": "^2.16.0",
+    "ts-jest": "^29.4.11",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "author": {
+    "name": "NonAgenticAI",
+    "url": "https://nonagentic.ai"
+  },
+  "overrides": {
+    "isolated-vm": "7.0.2"
+  }
+}

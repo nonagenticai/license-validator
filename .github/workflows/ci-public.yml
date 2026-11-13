@@ -1,0 +1,116 @@
+# CI for a PUBLIC repository — self-contained, GitHub-hosted runners.
+#
+# ⛔ Why this file replaces `.github/workflows/ci.yml` rather than extending it:
+#   1. A public repo CANNOT consume the estate archetype
+#      (the estate's private `ts-service.yml` archetype): a public
+#      workflow cannot read a private repo. The run does not fail — it dies at startup with
+#      zero jobs.
+#   2. A public repo CANNOT use the ARC self-hosted pools (`allows_public_repositories:false`
+#      on both runner groups, and that must stay false: a fork PR can edit `runs-on`).
+#   3. GitHub-hosted standard runners are free and unlimited on public repos.
+#
+# ⛔ Every job is gated on `!github.event.repository.private`. The org's Actions billing is in
+#    a failed state, so a PRIVATE repo cannot start an ubuntu-latest job at all — it fails
+#    UNSTARTED (steps: [], startedAt == createdAt, no log). The gate lets this file land while
+#    the repo is private (jobs report "skipped", never red) and activate with zero edits at the
+#    flip. The consequence is load-bearing: CI CANNOT be verified before the flip, so the first
+#    real run is the one immediately after it.
+#
+# ⛔ This repo must resolve packages from the PUBLIC npm registry. An `.npmrc` pointing at
+# the estate's internal registry makes every install fail for an outsider.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: install betterleaks 1.10.1 (pinned, sha256-verified)
+        run: |
+          set -euo pipefail
+          version=1.10.1
+          sha=c174b42d7aa60caf58c0c3e555c0e4bed01fe6b0d99a412bce777b5af4ce913e
+          curl -fsSL -o "$RUNNER_TEMP/betterleaks.tgz" \
+            "https://github.com/betterleaks/betterleaks/releases/download/v${version}/betterleaks_${version}_linux_x64.tar.gz"
+          echo "${sha}  $RUNNER_TEMP/betterleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/betterleaks.tgz" -C "$RUNNER_TEMP" betterleaks
+      - name: scan the tree
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/betterleaks" dir --redact --exit-code 1 --no-banner \
+            --config=.betterleaks.toml \
+            --gitleaks-ignore-path .betterleaksignore .
+
+  no-private-refs:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: scan tracked files
+        run: bash scripts/ci/no-private-refs.sh
+
+  checks:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: install (locked)
+        run: npm ci --registry=https://registry.npmjs.org/
+
+      - name: build
+        run: npm run build --if-present
+
+      - name: lint
+        run: npm run lint --if-present
+
+      - name: test
+        run: npm test
+
+      - name: audit
+        run: npm audit --audit-level=high --registry=https://registry.npmjs.org/
+
+  # Publishable packages: OFF by default. Publishing to the public npm registry needs an
+  # npm org and a token, which is a separate, deliberate decision — not a side effect of
+  # making the source public. Enable with the repository variable `PUBLISH_NPM=true` and an
+  # `NPM_TOKEN` secret only once that decision is made.
+  package:
+    if: ${{ !github.event.repository.private && vars.PUBLISH_NPM == 'true' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - run: npm ci --registry=https://registry.npmjs.org/
+      - run: npm run build --if-present
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

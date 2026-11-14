@@ -103,12 +103,15 @@ jobs:
   # deliberate decision — not a side effect of making the source public. Enable with the
   # repository variable `PUBLISH_NPM=true`.
   #
-  # ⛔ BOOTSTRAP EXCEPTION — TEMPORARY. The `open-source-kit` archetype is OIDC-only (npm refuses
-  #    to run when a token is also present). But a Trusted Publisher can only be configured for a
-  #    package that already exists, so the FIRST publish of a brand-new package cannot use OIDC.
-  #    `NODE_AUTH_TOKEN` below exists only for that first publish; the follow-up change removes it
-  #    and restores the archetype verbatim. Provenance does not depend on the credential: the job
-  #    has `id-token: write` and attests from the OIDC token either way.
+  # ✅ OIDC-only, as the `open-source-kit` archetype requires. The bootstrap exception is retired:
+  #    the Trusted Publisher now exists for this package (GitHub Actions, repo
+  #    nonagenticai/license-validator, workflow ci-public.yml), so the publish authenticates with
+  #    the job's `id-token: write` and no credential secret. Provenance does not depend on the
+  #    credential either way — it is minted from the OIDC token.
+  #
+  #    Measured 2026-11-14: 1.0.2 published on the bootstrap token. 1.0.3 is the first token-free
+  #    release, so its publish run is what proves the record above is correct — a green run with no
+  #    NODE_AUTH_TOKEN in the log, not a green run that skipped.
   package:
     if: ${{ !github.event.repository.private && vars.PUBLISH_NPM == 'true' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
@@ -143,5 +146,3 @@ jobs:
             404) npm pack --dry-run && npm publish --provenance --access public ;;
             *)   echo "registry probe returned $code — refusing to publish blind" >&2; exit 1 ;;
           esac
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

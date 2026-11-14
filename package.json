@@ -1,6 +1,6 @@
 {
   "name": "@nonagenticai/license-validator",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "License validation for n8n custom modules",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

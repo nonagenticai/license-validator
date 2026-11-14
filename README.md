@@ -80,6 +80,15 @@ Issues and pull requests are welcome. See
 organisation-wide rules; setup, test and lint commands are in this README. Commits carry DCO
 sign-off.
 
+## Licensing
+
+This package validates licence tokens for n8n custom modules against the licences service at
+`NONAGENTIC_LICENSES_BASE_URL` (or the `introspectUrl` option). It is part of the optional
+licensing stack: nothing else in the nonagenticai platform requires it. With no introspect URL
+configured the validator reports that it is not configured rather than guessing.
+
+Apache-2.0 covers the code; running it requires no licence key.
+
 ## License
 
 Apache 2.0 — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).

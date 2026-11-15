@@ -6,6 +6,12 @@
 
 License validation package for n8n custom modules with intelligent caching.
 
+| | |
+|---|---|
+| **Runtime** | Node.js 26 (see [`.nvmrc`](.nvmrc)) · TypeScript |
+| **Depends on** | licences service (`/license/introspect`); no runtime npm dependencies beyond the native `fetch` API |
+| **Runs on** | n8n worker processes, through the custom node packages that import it |
+
 ## What License Validator Does
 
 Every n8n custom node on the nonagentic.ai platform must verify that the user holds an active license before executing any workflow operation. This TypeScript package provides that verification as a shared dependency: custom node packages import it, call `validate(token)` with the user's license token, and the validator checks whether the token represents an active, non-expired license by calling the licenses service's `/license/introspect` endpoint. If the token is invalid, expired, or unrecognized, the validator throws an error that prevents the node from executing.
@@ -20,12 +26,22 @@ The package is consumed by the n8n custom node packages and installed into the n
 - Built-in caching to minimize API calls (5-minute default TTL)
 - Singleton pattern for module-level cache persistence
 - Concurrent validation prevention
-- Configurable timeouts and endpoints
+- Configurable endpoints, cache TTL, and request timeout
 
 ## Installation
 
 ```bash
 npm install @nonagenticai/license-validator
+```
+
+## Quick start
+
+```bash
+git clone https://github.com/nonagenticai/license-validator.git
+cd license-validator
+npm ci
+npm run build
+npm test
 ```
 
 ## Usage
@@ -42,6 +58,21 @@ await validator.validate(licenseToken);
 
 ## Configuration
 
+The introspect URL can be supplied as the constructor's `introspectUrl` option or through the
+`NONAGENTIC_LICENSES_BASE_URL` environment variable. The remaining options are constructor-only.
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `introspectUrl` (option) | `NONAGENTIC_LICENSES_BASE_URL` when set, otherwise `""` | licences `/license/introspect` endpoint |
+| `NONAGENTIC_LICENSES_BASE_URL` (environment variable) | unset (`""`) | Default value for `introspectUrl` |
+| `cacheTtlSeconds` | `300` (5 minutes) | How long a validation result stays cached |
+| `timeoutMs` | `10000` (10 seconds) | Per-request timeout for the introspect call |
+
+With no introspect URL configured (neither the option nor the environment variable), `validate()`
+throws a clear "not configured" error instead of guessing an endpoint.
+
+The example below shows **overrides**, not defaults:
+
 ```typescript
 import { LicenseValidator } from '@nonagenticai/license-validator';
 
@@ -55,18 +86,60 @@ const validator = new LicenseValidator({
 ## API
 
 ### `getLicenseValidator(options?)`
-Get the global singleton validator instance.
+Get the global singleton validator instance. Options are applied only when the singleton is first
+created.
+
+### `new LicenseValidator(options?)`
+Create an independent validator. It accepts the configuration options in the table above.
 
 ### `LicenseValidator.validate(token: string): Promise<void>`
-Validate a license token. Throws error if invalid.
+Validate a license token. Throws an error if the token is invalid, expired, or cannot be verified.
 
 ### `LicenseValidator.clearCache()`
 Clear all cached validation results.
 
 ### `LicenseValidator.clearCacheForToken(token: string)`
-Clear cache for a specific token.
+Clear the cache entry for a specific token.
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+### `resetLicenseValidator()`
+Clear the global singleton so the next `getLicenseValidator()` call creates a new instance.
+
+The package also exports the `LicenseValidatorOptions`, `LicenseIntrospectResponse`,
+`ValidatedLicense`, `LicensePlan`, and `LicenseCache` types, plus the
+`DEFAULT_INTROSPECT_URL`, `DEFAULT_CACHE_TTL_SECONDS`, and `DEFAULT_TIMEOUT_MS` constants.
+
+## Development
+
+Node.js is pinned by [`.nvmrc`](.nvmrc) (26.13.0). The package's real npm scripts are:
+
+| Script | Command | Purpose |
+|--------|---------|---------|
+| `npm run build` | `tsc` | Compile `src/` to `dist/` |
+| `npm run lint` | `eslint "src/**/*.ts"` | Lint the TypeScript sources |
+| `npm test` | `NODE_OPTIONS='--localstorage-file=/tmp/jest-localstorage' jest --passWithNoTests` | Run the Jest tests |
+
+From a fresh clone:
+
+```bash
+npm ci --registry=https://registry.npmjs.org/
+npm run build
+npm run lint
+npm test
+```
+
+## CI/CD
+
+`.github/workflows/ci-public.yml` runs on pull requests, pushes to `main`, and manual dispatches, on
+GitHub-hosted runners:
+
+1. **Secret scan** — betterleaks with `.betterleaks.toml`
+2. **No private refs** — `scripts/ci/no-private-refs.sh`
+3. **Checks** — `npm ci` from the public registry, `npm run build`, `npm run lint`, `npm test`,
+   and `npm audit --omit=dev --audit-level=high` on production dependencies
+4. **Publish** — when the repository variable `PUBLISH_NPM` is `true` and the ref is `main`, publishes
+   once per version through npm OIDC/Trusted Publishing with provenance
+
+The workflow performs no deployment.
 
 ## Security
 
@@ -77,7 +150,7 @@ Report vulnerabilities privately through the repository's Security tab — see
 
 Issues and pull requests are welcome. See
 [`CONTRIBUTING.md`](https://github.com/nonagenticai/.github/blob/main/CONTRIBUTING.md) for the
-organisation-wide rules; setup, test and lint commands are in this README. Commits carry DCO
+organisation-wide rules; setup, test and lint commands are in **Development** above. Commits carry DCO
 sign-off.
 
 ## Licensing
